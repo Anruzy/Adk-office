@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adk-office (MPL-2.0). Generado por tools/gen-icons.py -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFFFFF" android:pathData="M36,26 L64,26 L76,38 L76,82 L36,82 Z" />
+    <path android:fillColor="#BBDEFB" android:pathData="M64,26 L64,38 L76,38 Z" />
+    <path android:strokeColor="#1565C0" android:strokeWidth="3" android:strokeLineCap="round" android:pathData="M42,44 L70,44" />
+    <path android:strokeColor="#1565C0" android:strokeWidth="3" android:strokeLineCap="round" android:pathData="M42,52 L70,52" />
+    <path android:strokeColor="#1565C0" android:strokeWidth="3" android:strokeLineCap="round" android:pathData="M42,60 L58,60" />
+    <path android:fillColor="#2E7D32" android:pathData="M42,66 L54,66 L54,76 L42,76 Z" />
+    <path android:fillColor="#EF6C00" android:pathData="M58,66 L70,66 L70,76 L58,76 Z" />
+</vector>

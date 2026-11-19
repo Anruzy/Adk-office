@@ -1,0 +1,163 @@
+name: Compilar APK
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths-ignore: ['**.md', 'docs/**', 'LICENSE']
+  workflow_dispatch:
+    inputs:
+      collabora_ref:
+        description: 'Rama, etiqueta o commit de Collabora Office (vacío = el de config/adk.env)'
+        required: false
+        default: ''
+      abi:
+        description: 'Arquitectura del celular'
+        type: choice
+        options: [arm64-v8a, armeabi-v7a, x86_64]
+        default: arm64-v8a
+
+# Un build a la vez por rama: si se cancelara a medias se perdería la caché.
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # para publicar Releases al crear una etiqueta v*
+
+env:
+  ANDROID_ABI: ${{ inputs.abi || 'arm64-v8a' }}
+  # /mnt es el disco grande del runner (~70 GB libres).
+  ADK_WORK: /mnt/adk/work
+  ADK_TARBALLS: /mnt/adk/tarballs
+  CCACHE_DIR: /mnt/adk/ccache
+  CCACHE_MAXSIZE: 6G
+  CCACHE_COMPRESS: '1'
+  CCACHE_COMPRESSLEVEL: '6'
+  CCACHE_SLOPPINESS: pch_defines,time_macros,include_file_mtime,include_file_ctime
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Liberar espacio y preparar /mnt
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup \
+                      /opt/hostedtoolcache/CodeQL /usr/local/share/boost \
+                      /usr/local/share/powershell /usr/share/swift || true
+          sudo docker image prune --all --force >/dev/null 2>&1 || true
+          sudo mkdir -p /mnt/adk && sudo chown -R "$USER" /mnt/adk
+          df -h / /mnt
+
+      - name: Dependencias de compilación
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            autoconf automake autopoint bison ccache flex gettext gperf libtool m4 \
+            make nasm pkgconf zip unzip xsltproc libxml2-utils \
+            libxml2-dev libxslt1-dev libssl-dev libpng-dev libcap-dev libpam0g-dev \
+            libkrb5-dev libnss3-dev libcups2-dev libfontconfig1-dev libcppunit-dev \
+            libzstd-dev python3-dev python3-lxml python3-polib
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Descargar código de Collabora Office
+        id: fetch
+        env:
+          COLLABORA_REF: ${{ inputs.collabora_ref }}
+        run: |
+          [ -n "$COLLABORA_REF" ] || unset COLLABORA_REF
+          scripts/01-fetch-sources.sh
+
+      - name: Restaurar ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: /mnt/adk/ccache
+          key: ccache-${{ env.ANDROID_ABI }}-${{ github.run_id }}
+          restore-keys: ccache-${{ env.ANDROID_ABI }}-
+
+      - name: Restaurar paquetes externos
+        uses: actions/cache/restore@v4
+        with:
+          path: /mnt/adk/tarballs
+          key: tarballs-${{ github.run_id }}
+          restore-keys: tarballs-
+
+      - name: SDK y NDK de Android
+        run: scripts/02-setup-android.sh
+
+      - name: Compilar el motor (paso largo)
+        id: engine
+        # Deja margen para guardar la caché si se agota el tiempo: al
+        # volver a lanzar el build continúa donde se quedó gracias a ccache.
+        timeout-minutes: 290
+        run: |
+          ccache -z
+          scripts/03-build-engine.sh
+          ccache -s
+
+      - name: Guardar ccache
+        if: always() && steps.fetch.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: /mnt/adk/ccache
+          key: ccache-${{ env.ANDROID_ABI }}-${{ github.run_id }}
+
+      - name: Huella de paquetes externos
+        id: tarhash
+        if: always() && steps.fetch.outcome == 'success'
+        run: echo "h=$(ls /mnt/adk/tarballs | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - name: Guardar paquetes externos
+        if: always() && steps.fetch.outcome == 'success'
+        uses: actions/cache/save@v4
+        continue-on-error: true   # ya existe si no cambió
+        with:
+          path: /mnt/adk/tarballs
+          key: tarballs-${{ steps.tarhash.outputs.h }}
+
+      - name: Llave de firma (opcional)
+        env:
+          KEYSTORE_B64: ${{ secrets.ADK_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > /mnt/adk/release.jks
+            echo "ADK_KEYSTORE=/mnt/adk/release.jks" >> "$GITHUB_ENV"
+            echo "Se firmará el APK de versión."
+          else
+            echo "Sin llave: solo se genera el APK de depuración."
+          fi
+
+      - name: Compilar la app y empaquetar el APK
+        env:
+          ADK_KEYSTORE_PASSWORD: ${{ secrets.ADK_KEYSTORE_PASSWORD }}
+          ADK_KEY_ALIAS: ${{ secrets.ADK_KEY_ALIAS }}
+          ADK_KEY_PASSWORD: ${{ secrets.ADK_KEY_PASSWORD }}
+        run: scripts/05-build-app.sh
+
+      - name: Subir APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: office-movil-${{ env.ANDROID_ABI }}
+          path: |
+            out/*.apk
+            out/FUENTES.txt
+          if-no-files-found: error
+
+      - name: Publicar Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            out/*.apk
+            out/FUENTES.txt
