@@ -16,7 +16,7 @@ args=(--enable-androidapp
       --with-vendor="$APP_VENDOR"
       --with-info-url="$APP_INFO_URL"
       --with-android-package-name="$APP_PACKAGE"
-      --with-android-package-versioncode="$VERSION_CODE")
+      --with-android-package-versioncode="$APP_VERSION-$VERSION_CODE")
 # Sin la marca de Collabora (sus logos son marcas registradas).
 if ./configure --help | grep -q -- '--disable-branding'; then
     args+=(--disable-branding)
