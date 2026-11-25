@@ -58,6 +58,14 @@ else
     echo "  ✓ Interruptor (ya aplicado o archivo ausente)"
 fi
 
+log "Habilitar edición en solo lectura y exportar como imagen (Android)"
+perl "$ADK_ROOT/scripts/patches/apply.pl" "$ADK_ROOT/scripts/patches/loactivity.pl" \
+    "$LIBJAVA/LOActivity.java"
+
+log "Exportar como imagen (menú de la interfaz)"
+perl "$ADK_ROOT/scripts/patches/apply.pl" "$ADK_ROOT/scripts/patches/menubar.pl" \
+    "$ADK_SRC/browser/src/control/Control.Menubar.ts"
+
 log "Instalación movible a la SD"
 MANIFEST="$ADK_SRC/android/app/src/main/AndroidManifest.xml"
 if grep -q 'android:installLocation=' "$MANIFEST"; then

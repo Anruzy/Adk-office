@@ -42,6 +42,8 @@ Así, actualizar a una versión nueva de Collabora solo requiere cambiar
 | Nombre e identidad | **Office Móvil**, paquete `io.github.anruzy.adkoffice`, ícono propio. No usa logos ni marcas de Collabora. |
 | Tarjeta SD | Las copias de trabajo de documentos (al abrir, exportar e imprimir) van a la SD si hay una montada. Se puede desactivar en *Ajustes → Almacenamiento*. Los temporales viejos se limpian solos. |
 | Instalación en SD | `installLocation="auto"`: en celulares con SD adoptada, la app se puede mover a la tarjeta desde *Ajustes de Android → Apps*. |
+| Habilitar edición | Los archivos que llegan sin permiso de escritura (WhatsApp, correo, descargas) muestran arriba la barra *Solo lectura · Habilitar edición*, como la Vista protegida de Excel. Al tocarla se guarda una copia editable donde elijas y el documento pasa a modo edición. |
+| Guardar como imagen | *Exportar como → Imagen (.png)* en documentos, hojas, presentaciones y dibujos, también en solo lectura. |
 | Idiomas | Español e inglés (configurable en `ADK_LANGS`). |
 
 Los documentos se abren y guardan con el selector de archivos de Android, por lo

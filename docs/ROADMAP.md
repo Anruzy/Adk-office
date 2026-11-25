@@ -8,9 +8,15 @@
 - [x] Identidad propia: nombre, paquete, ícono y encabezado
 - [x] Copias temporales de documentos en la tarjeta SD (con interruptor)
 - [x] App movible a SD adoptada (`installLocation="auto"`)
-- [ ] Primer APK compilado y probado en un celular real
+- [x] Primer APK compilado (build-4)
+- [x] Barra "Habilitar edición" para archivos en solo lectura
+- [x] Exportar como imagen (PNG)
+- [ ] Probado en un celular real
 
 ## Fase 2: experiencia en el celular
+
+- [ ] Exportar imagen de una página/hoja/diapositiva elegida (hoy: la que define el motor)
+- [ ] Exportar como JPG (el motor solo trae filtro PNG para LibreOfficeKit)
 
 - [ ] Pantalla de inicio con "Nuevo documento / hoja / presentación"
 - [ ] Carpeta predeterminada para documentos nuevos (interna o SD)

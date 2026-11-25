@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adk-office. MPL-2.0 -->
+<resources>
+    <string name="adk_readonly_message">Archivo de solo lectura. Para editarlo, guarda una copia editable.</string>
+    <string name="adk_readonly_message_convert">Archivo de solo lectura. Para editarlo, guarda una copia en formato ODF.</string>
+    <string name="adk_enable_editing">Habilitar edición</string>
+</resources>
